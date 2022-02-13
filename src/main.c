@@ -7,15 +7,17 @@ int main(int argc, char **argv){
 	(void) argv;
 
 	XY center = XYconstruct(5, 5);
-	AABB rect = AABBconstruct(center, 10);
-	QuadTree qt = QTconstruct(rect);
+	AABB rect = AABBconstruct(center, 5);
+	QuadTree *qt = QTconstruct(rect);
 
 	for(int i = 0; i < 6; ++i){
-		XY p = XYconstruct(i + 1, 4);
-		insert(&qt, &p);
+		XY p = XYconstruct(i, 0);
+		QTinsert(qt, &p);
 	}
 
-	queryRange(&qt, &rect);
+	QTqueryRange(qt, &rect);
+
+	QTFree(qt);
 
 	return 0;
 }

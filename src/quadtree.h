@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #define QT_NODE_CAP 4
 
@@ -36,10 +37,11 @@ AABB AABBconstruct(XY center, float halfDimention);
 uint8_t AABBcontainPoint(AABB *rect, XY *point);
 uint8_t AABBintersectAABB(AABB *rectA, AABB *rectB);
 
-QuadTree QTconstruct(AABB boundary);
-uint8_t insert(QuadTree *qt, XY *point);
-void subdivide(QuadTree *qt);
-void queryRange(QuadTree *qt, AABB *range);
+QuadTree *QTconstruct(AABB boundary);
+void QTFree(QuadTree *qt);
+uint8_t QTinsert(QuadTree *qt, XY *point);
+void QTsubdivide(QuadTree *qt);
+void QTqueryRange(QuadTree *qt, AABB *range);
 
 #endif //QUADTREE_H_
 

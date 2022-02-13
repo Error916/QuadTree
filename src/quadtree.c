@@ -18,7 +18,7 @@ uint8_t AABBcontainPoint(AABB *rect, XY *point){
 	float n = rect->center.y - rect->halfDimention;
 	float s = rect->center.y + rect->halfDimention;
 
-	if(point->x > w && point->x < e && point->y > n && point->y < s){
+	if(point->x >= w && point->x <= e && point->y >= n && point->y <= s){
 		return 1;
 	}
 
@@ -38,12 +38,30 @@ uint8_t AABBintersectAABB(AABB *rectA, AABB *rectB){
 	return 1;
 }
 
-QuadTree QTconstruct(AABB boundary){
-	QuadTree qt = {.boundary = boundary, .points_size = 0, .nw = NULL, .ne = NULL, .sw = NULL, .se = NULL};
+QuadTree *QTconstruct(AABB boundary){
+	QuadTree *qt = malloc(sizeof(QuadTree));
+	qt->boundary = boundary;
+	qt->points_size = 0;
+	qt->nw = NULL;
+	qt->ne = NULL;
+	qt->sw = NULL;
+	qt->se = NULL;
 	return qt;
 }
 
-uint8_t insert(QuadTree *qt, XY *point){
+void QTFree(QuadTree *qt){
+	free(qt);
+
+	if(qt->nw == NULL)
+		return;
+
+	QTFree(qt->nw);
+	QTFree(qt->ne);
+	QTFree(qt->sw);
+	QTFree(qt->se);
+}
+
+uint8_t QTinsert(QuadTree *qt, XY *point){
 	if(!AABBcontainPoint(&qt->boundary, point))
 		return 0;
 
@@ -53,30 +71,25 @@ uint8_t insert(QuadTree *qt, XY *point){
 	}
 
 	if(qt->nw == NULL)
-		subdivide(qt);
+		QTsubdivide(qt);
 
-	if(insert(qt->nw, point)) return 1;
-	if(insert(qt->ne, point)) return 1;
-	if(insert(qt->sw, point)) return 1;
-	if(insert(qt->se, point)) return 1;
+	if(QTinsert(qt->nw, point)) return 1;
+	if(QTinsert(qt->ne, point)) return 1;
+	if(QTinsert(qt->sw, point)) return 1;
+	if(QTinsert(qt->se, point)) return 1;
 
 	return 0;
 }
 
-// FIXME: make things permanent
-void subdivide(QuadTree *qt){
-	QuadTree nw = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x - qt->boundary.halfDimention / 2, qt->boundary.center.y - qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
-	QuadTree ne = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x + qt->boundary.halfDimention / 2, qt->boundary.center.y - qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
-	QuadTree sw = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x - qt->boundary.halfDimention / 2, qt->boundary.center.y + qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
-	QuadTree se = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x + qt->boundary.halfDimention / 2, qt->boundary.center.y + qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
-	qt->nw = &nw;
-	qt->ne = &ne;
-	qt->sw = &sw;
-	qt->se = &se;
+void QTsubdivide(QuadTree *qt){
+	qt->nw = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x - qt->boundary.halfDimention / 2, qt->boundary.center.y - qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
+	qt->ne = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x + qt->boundary.halfDimention / 2, qt->boundary.center.y - qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
+	qt->sw = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x - qt->boundary.halfDimention / 2, qt->boundary.center.y + qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
+	qt->se = QTconstruct(AABBconstruct(XYconstruct(qt->boundary.center.x + qt->boundary.halfDimention / 2, qt->boundary.center.y + qt->boundary.halfDimention / 2 ), qt->boundary.halfDimention / 2));
 }
 
 // TODO: make return a array of points
-void queryRange(QuadTree *qt, AABB *range){
+void QTqueryRange(QuadTree *qt, AABB *range){
 	if(!AABBintersectAABB(&qt->boundary, range))
 		return;
 
@@ -88,8 +101,8 @@ void queryRange(QuadTree *qt, AABB *range){
 	if(qt->nw == NULL)
 		return;
 
-	queryRange(qt->nw, range);
-	queryRange(qt->ne, range);
-	queryRange(qt->sw, range);
-	queryRange(qt->se, range);
+	QTqueryRange(qt->nw, range);
+	QTqueryRange(qt->ne, range);
+	QTqueryRange(qt->sw, range);
+	QTqueryRange(qt->se, range);
 }
